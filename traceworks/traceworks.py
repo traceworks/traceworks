@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import json
 import sys
+import os
 import re
 import datetime
 import sqlite3
@@ -9,11 +10,42 @@ import argparse
 
 from utils import parseline, display_results, flattenMap
 
-class TraceUtil:
-    def __init__(self, args):
-        self.args = args
+bug_address="santosiv@in.ibm.com"
 
-        with open(args.config) as json_file:
+class TraceUtil:
+    def __init__(self):
+        cdir, filename = os.path.split(__file__)
+        default_jsonconfig_path = os.path.join(cdir, "traceconfig.json")
+        parser = argparse.ArgumentParser(description='''Work with Linux ftrace.''',
+                                         epilog='''See man page for more details.
+                                         Report bugs to <{}>'''.format(bug_address),
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        parser.add_argument('tracefile', type=str, nargs='?', help='ftrace file')
+        parser.add_argument('dbfile', type=str, nargs='?', default="tracedump.db",
+                            help='sqlite3 database file')
+        parser.add_argument('--query', '-q', type=int, nargs='+',
+                            help='the query number to run')
+        parser.add_argument('--qargs', '-a', type=str, nargs='+',
+                            help='arguments to the query if any')
+        parser.add_argument('--list', '-l', action='store_true',
+                            help='List all the available queries')
+        parser.add_argument('--generate', '-g', action='store_true',
+                            help='Store data in database from tracefile')
+        parser.add_argument('--debug', '-d', action='store_true',
+                            help='Print debug information')
+        parser.add_argument('--config', '-c', type=str, nargs=1,
+                            help='JSON config file', default=default_jsonconfig_path)
+        parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+
+
+
+        if len(sys.argv) == 1:
+            parser.print_usage()
+            sys.exit(1)
+
+        self.args = parser.parse_args()
+
+        with open(self.args.config) as json_file:
             try:
                 self.config = json.load(json_file)
             except ValueError:
@@ -30,7 +62,7 @@ class TraceUtil:
             self.queries = None
 
         self.config = self.config['traces']
-        self.tracefile = args.tracefile
+        self.tracefile = self.args.tracefile
         self.data = {}
         self.pnames = {}
 
@@ -272,42 +304,3 @@ class TraceUtil:
         self.conn.commit()
         self.conn.close()
         return
-
-
-bug_address="santosiv@in.ibm.com"
-
-def main():
-    parser = argparse.ArgumentParser(description='''Work with Linux ftrace.''',
-                                     epilog='''See man page for more details.
-                                     Report bugs to <{}>'''.format(bug_address),
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('tracefile', type=str, nargs='?', help='ftrace file')
-    parser.add_argument('dbfile', type=str, nargs='?', default="tracedump.db",
-                        help='sqlite3 database file')
-    parser.add_argument('--query', '-q', type=int, nargs='+',
-                        help='the query number to run')
-    parser.add_argument('--qargs', '-a', type=str, nargs='+',
-                        help='arguments to the query if any')
-    parser.add_argument('--list', '-l', action='store_true',
-                        help='List all the available queries')
-    parser.add_argument('--generate', '-g', action='store_true',
-                        help='Store data in database from tracefile')
-    parser.add_argument('--debug', '-d', action='store_true',
-                        help='Print debug information')
-    parser.add_argument('--config', '-c', type=str, nargs=1,
-                        help='JSON config file', default="traceconfig.json")
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
-
-
-    if len(sys.argv) == 1:
-        parser.print_usage()
-        sys.exit(1)
-
-    args = parser.parse_args()
-
-    t = TraceUtil(args)
-    t.start()
-    t.finish()
-
-if __name__  == "__main__":
-    main()
