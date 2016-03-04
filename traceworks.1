@@ -1,0 +1,61 @@
+.TH TRACEWORKS "1" "March 2016" "traceworks 1.0" "User Commands"
+.SH NAME
+traceworks \- parse and analyse data from Linux ftrace.
+.SH SYNOPSIS
+.B traceworks
+[OPTION]... [dbfile] [tracefile]
+.SH DESCRIPTION
+Work with Linux ftrace. This tool helps to parse the traces from the Linux
+kernel, and help to analyse using custom queries.
+.TP
+usage: traceworks [\-h] [\-\-query QUERY [QUERY ...]]
+[\-\-qargs QARGS [QARGS ...]] [\-\-list] [\-\-generate]
+[\-\-debug] [\-\-config CONFIG] [\-\-version]
+[tracefile] [dbfile]
+
+.SS "positional arguments:"
+.TP
+tracefile
+ftrace file (default: None)
+.TP
+dbfile
+sqlite3 database file (default: tracedump.db)
+.SS "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-\-query\fR QUERY [QUERY ...], \fB\-q\fR QUERY [QUERY ...]
+the query number to run (default: None)
+.TP
+\fB\-\-qargs\fR QARGS [QARGS ...], \fB\-a\fR QARGS [QARGS ...]
+arguments to the query if any (default: None)
+.TP
+\fB\-\-list\fR, \fB\-l\fR
+List all the available queries (default: False)
+.TP
+\fB\-\-generate\fR, \fB\-g\fR
+Store data in database from tracefile (default: False)
+.TP
+\fB\-\-debug\fR, \fB\-d\fR
+Print debug information (default: False)
+.TP
+\fB\-\-config\fR CONFIG, \fB\-c\fR CONFIG
+JSON config file (default: traceconfig.json)
+.TP
+\fB\-\-version\fR
+show program's version number and exit
+.PP
+Report bugs to <santosiv@in.ibm.com>
+.SH "SEE ALSO"
+The full documentation for
+.B traceworks
+is maintained as a Texinfo manual.  If the
+.B info
+and
+.B traceworks
+programs are properly installed at your site, the command
+.IP
+.B info traceworks
+.PP
+should give you access to the complete manual.

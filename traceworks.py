@@ -6,7 +6,6 @@ import datetime
 import sqlite3
 import time
 import argparse
-from collections import OrderedDict
 
 from utils import parseline, display_results, flattenMap
 
@@ -272,9 +271,15 @@ class TraceUtil:
     def finish(self):
         self.conn.commit()
         self.conn.close()
+        return
+
+
+bug_address="santosiv@in.ibm.com"
 
 def main():
-    parser = argparse.ArgumentParser(description='Work with Linux ftrace.',
+    parser = argparse.ArgumentParser(description='''Work with Linux ftrace.''',
+                                     epilog='''See man page for more details.
+                                     Report bugs to <{}>'''.format(bug_address),
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('tracefile', type=str, nargs='?', help='ftrace file')
     parser.add_argument('dbfile', type=str, nargs='?', default="tracedump.db",
