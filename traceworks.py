@@ -1,9 +1,11 @@
+#!/usr/bin/python
 import json
 import sys
 import re
 import datetime
 import sqlite3
 import time
+import argparse
 from collections import OrderedDict
 
 from utils import parseline, display_results, flattenMap
@@ -13,7 +15,11 @@ class TraceUtil:
         self.args = args
 
         with open(args.config) as json_file:
-            self.config = json.load(json_file)
+            try:
+                self.config = json.load(json_file)
+            except ValueError:
+                print "Invalid JSON file"
+                exit(1)
 
         if 'traces' not in self.config:
             print "JSON file does not contain traces."
@@ -227,7 +233,7 @@ class TraceUtil:
                 continue
 
             if "args" in query and len(query['args']) > 0:
-                if len(self.args.qargs) == 0:
+                if not self.args.qargs:
                     print "query '{}' requires {} argument(s)".format(query["name"],
                                     len(query["args"]))
                     exit(1)
@@ -268,16 +274,15 @@ class TraceUtil:
         self.conn.close()
 
 def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(description='Work with Linux ftrace.')
+    parser = argparse.ArgumentParser(description='Work with Linux ftrace.',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('tracefile', type=str, nargs='?', help='ftrace file')
     parser.add_argument('dbfile', type=str, nargs='?', default="tracedump.db",
                         help='sqlite3 database file')
     parser.add_argument('--query', '-q', type=int, nargs='+',
                         help='the query number to run')
     parser.add_argument('--qargs', '-a', type=str, nargs='+',
-                        help='arguments to the query if any', default=[])
+                        help='arguments to the query if any')
     parser.add_argument('--list', '-l', action='store_true',
                         help='List all the available queries')
     parser.add_argument('--generate', '-g', action='store_true',
@@ -286,7 +291,12 @@ def main():
                         help='Print debug information')
     parser.add_argument('--config', '-c', type=str, nargs=1,
                         help='JSON config file', default="traceconfig.json")
+    parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
+
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        sys.exit(1)
 
     args = parser.parse_args()
 

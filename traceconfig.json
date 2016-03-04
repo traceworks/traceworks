@@ -73,7 +73,12 @@
             "query": "SELECT pid, name, SUM(duration) FROM process WHERE pid={} GROUP BY name ORDER BY duration DESC"
         },
         {
-            "name": "syscall by cpu",
+            "name": "syscall duration",
+            "desc": "List time taken by each syscall",
+            "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name,cpu) group by name, pid order by pid;"
+        },
+        {
+            "name": "syscall duration by cpu",
             "desc": "List the time taken by each system call on each CPU",
             "query": "SELECT cpu, name, sum(duration) from process group by name"
         },
