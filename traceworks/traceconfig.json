@@ -1,92 +1,104 @@
 {
-    "traces": [
-        {
-            "name": "sys_",
-            "table_name": "process",
-            "exit_pattern": "->",
-            "fields": ["pid", "name", "cpu", "duration"],
-            "filter": ["timestamp"],
-            "types": ["INTEGER", "TEXT", "INTEGER", "TIMESTAMP"],
-            "hierarchy": "pid->name->cpu",
-            "exit_action": [
-                {
-                    "operation": "difference",
-                    "field": "timestamp",
-                    "store_name": "duration",
-                    "type": "timedelta"
-                }
-            ],
-            "entry_action": [
-                {
-                    "operation": "store",
-                    "field": "timestamp",
-                    "store_name": "timestamp",
-                    "type": "timestamp"
-                }
-            ]
-        },
-        {
-            "name": "sched_switch",
-            "table_name": "cpu",
-            "entry_pattern": "next_pid=0",
-            "fields": ["cpu", "idle_time", "context_switches"],
-            "filter": ["timestamp"],
-            "types": ["INTEGER", "TIMESTAMP", "INTEGER"],
-            "hierarchy": "cpu",
-            "entry_action": [
-                {
-                    "operation": "store",
-                    "field": "timestamp",
-                    "store_name": "timestamp",
-                    "type": "timestamp"
-                }
-            ],
-            "exit_action": [
-                {
-                    "operation": "difference",
-                    "field": "timestamp",
-                    "store_name": "idle_time",
-                    "type": "timedelta"
-                },
-                {
-                    "operation": "increment",
-                    "store_name": "context_switches",
-                    "type": "integer"
-                }
-            ]
-        }
-    ],
-    "queries": [
-        {
-            "name": "process names",
-            "desc": "Map process names and PIDs"
-        },
-        {
-            "name": "cpuidle",
-            "desc": "List idle times of each CPU",
-            "query": "SELECT * from cpu"
-        },
-        {
-            "name": "syscall duration for a pid",
-            "args": ["pid"],
-            "desc": "List time taken by each syscall for a process",
-            "query": "SELECT pid, name, SUM(duration) FROM process WHERE pid={} GROUP BY name ORDER BY duration DESC"
-        },
-        {
-            "name": "syscall duration",
-            "desc": "List time taken by each syscall",
-            "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name,cpu) group by name, pid order by pid;"
-        },
-        {
-            "name": "syscall duration by cpu",
-            "desc": "List the time taken by each system call on each CPU",
-            "query": "SELECT cpu, name, sum(duration) from process group by name"
-        },
-        {
-            "name": "Top n syscalls",
-            "desc": "List the top n syscalls that consume cpu time",
-            "args": ["number"],
-            "query": "SELECT name, SUM(duration) FROM process GROUP BY name ORDER BY duration DESC LIMIT {}"
-        }
-    ]
+    "traceworks":{
+        "ftrace": [
+            {
+                "config": [
+                    {
+                        "name": "sys_",
+                        "table_name": "process",
+                        "exit_pattern": "->",
+                        "fields": ["pid", "name", "cpu", "duration"],
+                        "filter": ["timestamp"],
+                        "types": ["INTEGER", "TEXT", "INTEGER", "TIMESTAMP"],
+                        "hierarchy": "pid->name->cpu",
+                        "exit_action": [
+                            {
+                                "operation": "difference",
+                                "field": "timestamp",
+                                "store_name": "duration",
+                                "type": "timedelta"
+                            }
+                        ],
+                        "entry_action": [
+                            {
+                                "operation": "store",
+                                "field": "timestamp",
+                                "store_name": "timestamp",
+                                "type": "timestamp"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "sched_switch",
+                        "table_name": "cpu",
+                        "entry_pattern": "next_pid=0",
+                        "fields": ["cpu", "idle_time", "context_switches"],
+                        "filter": ["timestamp"],
+                        "types": ["INTEGER", "TIMESTAMP", "INTEGER"],
+                        "hierarchy": "cpu",
+                        "entry_action": [
+                            {
+                                "operation": "store",
+                                "field": "timestamp",
+                                "store_name": "timestamp",
+                                "type": "timestamp"
+                            }
+                        ],
+                        "exit_action": [
+                            {
+                                "operation": "difference",
+                                "field": "timestamp",
+                                "store_name": "idle_time",
+                                "type": "timedelta"
+                            },
+                            {
+                                "operation": "increment",
+                                "store_name": "context_switches",
+                                "type": "integer"
+                            }
+                        ]
+                    }
+                ],
+                "queries": [
+                    {
+                        "name": "process names",
+                        "desc": "Map process names and PIDs"
+                    },
+                    {
+                        "name": "cpuidle",
+                        "desc": "List idle times of each CPU",
+                        "query": "SELECT * from cpu"
+                    },
+                    {
+                        "name": "syscall duration for a pid",
+                        "args": ["pid"],
+                        "desc": "List time taken by each syscall for a process",
+                        "query": "SELECT pid, name, SUM(duration) FROM process WHERE pid={} GROUP BY name ORDER BY duration DESC"
+                    },
+                    {
+                        "name": "syscall duration",
+                        "desc": "List time taken by each syscall",
+                        "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name,cpu) group by name, pid order by pid;"
+                    },
+                    {
+                        "name": "syscall duration by cpu",
+                        "desc": "List the time taken by each system call on each CPU",
+                        "query": "SELECT cpu, name, sum(duration) from process group by name"
+                    },
+                    {
+                        "name": "Top n syscalls",
+                        "desc": "List the top n syscalls that consume cpu time",
+                        "args": ["number"],
+                        "query": "SELECT name, SUM(duration) FROM process GROUP BY name ORDER BY duration DESC LIMIT {}"
+                    }
+                ]
+            }
+        ],
+        "strace": [
+            {
+                "config": [],
+                "queries": []
+            }
+        ]
+    }
 }

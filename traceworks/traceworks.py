@@ -16,13 +16,16 @@ class TraceUtil:
     def __init__(self):
         cdir, filename = os.path.split(__file__)
         default_jsonconfig_path = os.path.join(cdir, "traceconfig.json")
-        parser = argparse.ArgumentParser(description='''Work with Linux ftrace.''',
+        parser = argparse.ArgumentParser(description='''Work with traces.''',
                                          epilog='''See man page for more details.
                                          Report bugs to <{}>'''.format(bug_address),
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-        parser.add_argument('tracefile', type=str, nargs='?', help='ftrace file')
+        parser.add_argument('tracefile', type=str, nargs='?', help='trace file')
         parser.add_argument('dbfile', type=str, nargs='?', default="tracedump.db",
                             help='sqlite3 database file')
+        parser.add_argument('--type', '-t', type=str,
+                            help='Top level type from the config file',
+                            default='ftrace')
         parser.add_argument('--query', '-q', type=int, nargs='+',
                             help='the query number to run')
         parser.add_argument('--qargs', '-a', type=str, nargs='+',
@@ -52,19 +55,31 @@ class TraceUtil:
                 print "Invalid JSON file"
                 exit(1)
 
-        if 'traces' not in self.config:
-            print "JSON file does not contain traces."
+        if 'traceworks' not in self.config:
+            print "JSON file does not contain traceworks."
             exit(1)
 
+        c = self.config['traceworks']
+        if self.args.type not in c:
+            print "Invalid config type. Available types in the config file are:"
+            for i in c:
+                print "   ", i
+
+            exit(0)
+
+        self.config = c[self.args.type][0]
         if 'queries' in self.config:
             self.queries = self.config['queries']
         else:
             self.queries = None
 
-        self.config = self.config['traces']
+        if 'config' in self.config:
+            self.config = self.config['config']
+        else:
+            self.config = None
+
         self.tracefile = self.args.tracefile
         self.data = {}
-        self.pnames = {}
 
         return
 
@@ -215,7 +230,6 @@ class TraceUtil:
                 if parsed is None:
                     continue
 
-                self.pnames[parsed['pid']] = parsed['comm']
                 for i in range(len(self.config)):
                     c = self.config[i]
                     self.match_store(c, parsed)
@@ -252,6 +266,13 @@ class TraceUtil:
             i += 1
         exit(0)
 
+    def table_list_from_config(self):
+        t = []
+        for i in range(len(self.config)):
+            t.append(self.config[i]['table_name'])
+
+        return t
+
     def execute_query(self):
         for q in self.args.query:
             if q <= 0 or q > len(self.queries):
@@ -272,19 +293,41 @@ class TraceUtil:
             else:
                 qstr = query['query']
 
+            tables = self.table_list_from_config();
+            self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'");
+
+            r = self.cursor.fetchall()
+            db_tables = []
+            for t in r:
+                db_tables.append(t[0])
+
+            if not set(db_tables).intersection(set(tables)):
+                print 'Please generate the database from ftrace before querying'
+                exit(1)
+
             self.cursor.execute(qstr)
             r = self.cursor.fetchall()
             col_names = list(map(lambda x: x[0], self.cursor.description))
             display_results(col_names, r)
-        exit(0)
+
+        return
 
     def start(self):
+        if self.args.list or self.args.query:
+            if not self.queries or len(self.queries) == 0:
+                print "No queries defined"
+                exit(1)
+
         if self.args.list:
             self.list_queries()
 
         self.initdb()
 
         if self.args.generate:
+            if not self.config or len(self.config) == 0:
+                print "No config defined"
+                exit(1)
+
             self.create_tables()
             self.collectall()
 
@@ -304,3 +347,8 @@ class TraceUtil:
         self.conn.commit()
         self.conn.close()
         return
+
+if __name__ == '__main__':
+    t = TraceUtil()
+    t.start()
+    t.finish()
