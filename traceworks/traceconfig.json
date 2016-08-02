@@ -78,7 +78,7 @@
                     {
                         "name": "syscall duration",
                         "desc": "List time taken by each syscall",
-                        "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name,cpu) group by name, pid order by pid;"
+                        "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name,cpu) group by name, pid order by duration DESC;"
                     },
                     {
                         "name": "syscall duration by cpu",
@@ -89,7 +89,7 @@
                         "name": "Top n syscalls",
                         "desc": "List the top n syscalls that consume cpu time",
                         "args": ["number"],
-                        "query": "SELECT name, SUM(duration) FROM process GROUP BY name ORDER BY duration DESC LIMIT {}"
+                        "query": "SELECT name, pid, SUM(duration) FROM process GROUP BY pid, name ORDER BY duration DESC LIMIT {}"
                     }
                 ]
             }
