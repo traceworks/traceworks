@@ -3,6 +3,7 @@ import datetime
 from tabulate import tabulate
 from collections import Mapping
 from operator import add
+import logging
 
 def display_results(col_names, table):
     data = []
@@ -11,9 +12,9 @@ def display_results(col_names, table):
     print tabulate(data, headers='firstrow')
 
 def parseline(line, return_type="list"):
-    m = re.search(r'[ ]*(.*?)-(\d*?)\s*?\[(\d*)\]\s?(.*?)(\d{6}.\d{6}):\s?(.*)', line)
-
+    m = re.search(r'[ ]*(.*?)-(\d*?)\s*?\[(\d*)\]\s*(.*?)\s\s*(\d*.\d*):\s?(.*)', line)
     if m is not None:
+        logging.debug(m.groups())
         l = re.split('\W', m.group(6))
         g = m.group
         if return_type == "dict":

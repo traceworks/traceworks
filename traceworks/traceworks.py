@@ -7,6 +7,7 @@ import datetime
 import sqlite3
 import time
 import argparse
+import logging
 
 from utils import parseline, display_results, flattenMap
 
@@ -36,17 +37,36 @@ class TraceUtil:
                             help='Store data in database from tracefile')
         parser.add_argument('--debug', '-d', action='store_true',
                             help='Print debug information')
+        parser.add_argument('--verbose', "-v", action='store_true',
+                            help="increase output verbosity")
+        parser.add_argument("--logfile", '-f', type=str, nargs=1, help='Save all logging and debug information to this file')
         parser.add_argument('--config', '-c', type=str, nargs=1,
                             help='JSON config file', default=default_jsonconfig_path)
         parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
 
+        log_level = logging.WARNING
+        self.args = parser.parse_args()
+
+        if self.args.debug:
+            log_level = logging.DEBUG
+
+        if self.args.verbose:
+            if not self.args.debug:
+                log_level = logging.INFO
+
+        if self.args.logfile:
+            logfile = self.args.logfile[0]
+        else:
+            logfile = None
+
+        logging.basicConfig(stream=sys.stderr, level=log_level,
+                            filename=logfile,
+                            format='%(asctime)s %(levelname)s: %(message)s')
 
         if len(sys.argv) == 1:
             parser.print_usage()
             sys.exit(1)
-
-        self.args = parser.parse_args()
 
         with open(self.args.config) as json_file:
             try:
@@ -83,16 +103,14 @@ class TraceUtil:
 
         return
 
-    def debug(self, *message):
-        if self.args.debug:
-            print message
-        return
 
     def initdb(self):
+        logging.info("Initialising database")
         self.conn = sqlite3.connect(self.args.dbfile)
         self.cursor = self.conn.cursor()
 
     def create_tables(self):
+        logging.info("Creating tables in the database")
         for i in range(len(self.config)):
             c = self.config[i]
             self.data[c['table_name']] = {}
@@ -249,7 +267,7 @@ class TraceUtil:
                 l.append(val)
 
             insert_statement = insert_statement.rstrip(',') + ')'
-            self.debug(insert_statement, l)
+            logging.debug(insert_statement + ' ' + ' '.join(str(e) for e in l))
             self.cursor.execute(insert_statement, l)
 
         return
@@ -338,7 +356,8 @@ class TraceUtil:
         self.process_trace()
         for i in range(len(self.config)):
             c = self.config[i]
-            self.debug(c['table_name'])
+            logging.info('Saving data for pattern \'' + c['name'] + '\' into table '
+                         + c['table_name'])
             d = self.flatten_data(c)
             if d:
                 self.save_data(c, d)
@@ -346,6 +365,7 @@ class TraceUtil:
     def finish(self):
         self.conn.commit()
         self.conn.close()
+        logging.shutdown()
         return
 
 if __name__ == '__main__':
