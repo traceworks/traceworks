@@ -13,6 +13,13 @@ from utils import parseline, display_results, flattenMap
 
 bug_address="santosiv@in.ibm.com"
 
+trace_state_file = '/tmp/trace_state' # Internal use only
+
+trace_mismatch_entry = False   # entry_pattern
+trace_mismatch_exit  = False   # exit_pattern
+
+trace_state_set = False        # Mark if trace was incomplete
+
 class TraceUtil:
     def __init__(self):
         cdir, filename = os.path.split(__file__)
@@ -44,9 +51,16 @@ class TraceUtil:
                             help='JSON config file', default=default_jsonconfig_path)
         parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
+        if len(sys.argv) == 1:
+            parser.print_usage()
+            sys.exit(1)
 
         log_level = logging.WARNING
         self.args = parser.parse_args()
+
+        if len(sys.argv) == 1:
+            parser.print_usage()
+            sys.exit(1)
 
         if self.args.debug:
             log_level = logging.DEBUG
@@ -63,10 +77,6 @@ class TraceUtil:
         logging.basicConfig(stream=sys.stderr, level=log_level,
                             filename=logfile,
                             format='%(asctime)s %(levelname)s: %(message)s')
-
-        if len(sys.argv) == 1:
-            parser.print_usage()
-            sys.exit(1)
 
         with open(self.args.config) as json_file:
             try:
@@ -103,6 +113,10 @@ class TraceUtil:
 
         return
 
+    def debug(self, *message):
+        if self.args.debug:
+            print message
+        return
 
     def initdb(self):
         logging.info("Initialising database")
@@ -128,6 +142,10 @@ class TraceUtil:
 
     def flatten_data(self, cfg):
         filter=cfg["filter"] if "filter" in cfg else None
+        # filter out 'last_action' and 'last_action_s' since they are internal
+        # fields to manage error conditions only.
+        filter.append('last_action')
+        filter.append('last_action_s')
         store_vars = []
         for a in ["exit_action", "entry_action"]:
             for f in cfg[a]:
@@ -154,6 +172,7 @@ class TraceUtil:
             t = []
             i = 0
             for s in d:
+                # Skip all 'last_action' and 'last_action_s' entries.
                 if set(s[0]).intersection(set(filter)):
                     continue
                 t.append(s)
@@ -190,7 +209,6 @@ class TraceUtil:
 
             if action['operation'] == 'store':
                 d[action['store_name']] = parsed[action['field']]
-                d[action['store_name']]
             elif action['operation'] == 'difference':
                 if action['field'] in d:
                     d[action['store_name']] += (parsed[action['field']] - d[action['field']])
@@ -203,8 +221,10 @@ class TraceUtil:
         l = hierarchy.split("->")
 
         for i in range(len(l)):
+            # for 'sched_switch', one dict per cpu is created.
             if parsed[l[i]] not in d:
                 d[parsed[l[i]]] = {}
+                # Always call it with a common head name 'd'
             d = d[parsed[l[i]]]
 
         if type(parsed['name']) is not str:
@@ -212,6 +232,9 @@ class TraceUtil:
         return d
 
     def match_store(self, cfg, parsed):
+        global trace_mismatch_entry
+        global trace_mismatch_exit
+
         if cfg['name'] in parsed['name']:
             if "hierarchy" in cfg:
                 d = self.get_dict(cfg["hierarchy"], parsed,
@@ -221,21 +244,58 @@ class TraceUtil:
                     # check for a entry pattern, and see if this is entry or
                     # exit. One line can either be a entry or an exit, and any
                     # on of the actions will be executed, cannot be both.
+		    #
+		    # Ensure that an entry_pattern has to be the first match
+		    # for every cpu (sched_switch case). Also, for every cpu
+		    # entry->entry (two consecutive entries) and exit->exit
+		    # (2 consecutive exits) are ignored.
                     if cfg['entry_pattern'] in parsed['buf']:
                         if 'entry_action' in cfg:
-                            self.execute_action(parsed, d, cfg['entry_action'])
+			    if 'last_action' not in d or d['last_action'] is 'exit':
+                                self.execute_action(parsed, d, cfg['entry_action'])
+                                d['last_action'] = 'entry'
+                            else:
+                                if not trace_mismatch_entry:
+                                        print('Incomplete trace data.\n')
+                                        logging.warning('mismatch in trace: missing exit: %s\n',parsed)
+                                        logging.warning('Only the first mismatch is reported.\n')
+                                        trace_mismatch_entry = True
                     else:
                         if 'exit_action' in cfg:
-                            self.execute_action(parsed, d, cfg['exit_action'])
+			    if 'last_action' in d and d['last_action'] is 'entry':
+                                self.execute_action(parsed, d, cfg['exit_action'])
+                                d['last_action'] = 'exit'
+                            else:
+                                if not trace_mismatch_entry:
+                                        print('Incomplete trace data.\n')
+                                        logging.warning('mismatch in trace: missing entry: %s\n',parsed)
+                                        logging.warning('Only the first mismatch is reported.\n')
+                                        trace_mismatch_entry = True
 
 
                 if 'exit_pattern' in cfg:
                     if cfg['exit_pattern'] in parsed['buf']:
                         if "exit_action" in cfg:
-                            self.execute_action(parsed, d, cfg['exit_action'])
+                            if 'last_action_s' in d and d['last_action_s'] is 'entry':
+                                self.execute_action(parsed, d, cfg['exit_action'])
+                                d['last_action_s'] = 'exit'
+                            else:
+                                if not trace_mismatch_exit:
+                                        print('Incomplete trace data.\n')
+                                        logging.warning('mismatch in trace: missing entry: %s\n',parsed)
+                                        logging.warning('Only the first mismatch is reported.\n')
+                                        trace_mismatch_exit = True
                     else:
                         if "entry_action" in cfg:
-                            self.execute_action(parsed, d, cfg['entry_action'])
+                            if 'last_action_s' not in d or d['last_action_s'] is 'exit':
+                                self.execute_action(parsed, d, cfg['entry_action'])
+                                d['last_action_s'] = 'entry'
+                            else:
+                                if not trace_mismatch_exit:
+                                        print('Incomplete trace data.\n')
+                                        logging.warning('mismatch in trace: missing exit: %s\n',parsed)
+                                        logging.warning('Only the first mismatch is reported.\n')
+                                        trace_mismatch_exit = True
 
     def process_trace(self):
         if not self.args.tracefile:
@@ -263,6 +323,7 @@ class TraceUtil:
                     if type(val) is datetime.timedelta:
                         val = (val.seconds * 1000000) + val.microseconds
                     else:
+                        logging.debug('field: %s, val timetuple: %ld', cfg['fields'][i], val)
                         val = time.mktime(val.timetuple())
                 l.append(val)
 
@@ -292,6 +353,21 @@ class TraceUtil:
         return t
 
     def execute_query(self):
+        global trace_mismatch_entry
+        global trace_mismatch_exit
+        global trace_state_set
+
+        # Read the state of the trace data
+        if (trace_state_set == False):
+            with open(trace_state_file) as f:
+                for l in f:
+                    entries = l.split(': ')
+                    if (entries[0] == 'trace_mismatch_entry'):
+                        trace_mismatch_entry = entries[1]
+                    elif (entries[0] == 'trace_mismatch_exit'):
+                        trace_mismatch_exit = entries[1]
+                trace_state_set = True
+
         for q in self.args.query:
             if q <= 0 or q > len(self.queries):
                 print "Invalid query number {}".format(q)
@@ -353,7 +429,19 @@ class TraceUtil:
             self.execute_query()
 
     def collectall(self):
+        global trace_mismatch_entry
+        global trace_mismatch_exit
+
         self.process_trace()
+
+        # Remove existing file to capture trace state if any
+        if os.path.isfile(trace_state_file):
+            os.remove(trace_state_file)
+        # Persist the state of trace data which is required while executing query
+        with open(trace_state_file, "w") as f:
+            f.write('trace_mismatch_entry: {}\n'.format(trace_mismatch_entry))
+            f.write('trace_mismatch_exit: {}\n'.format(trace_mismatch_exit))
+
         for i in range(len(self.config)):
             c = self.config[i]
             logging.info('Saving data for pattern \'' + c['name'] + '\' into table '
