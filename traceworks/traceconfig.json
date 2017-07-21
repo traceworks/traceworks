@@ -7,10 +7,10 @@
                         "name": "sys_",
                         "table_name": "process",
                         "exit_pattern": "->",
-                        "fields": ["pid", "name", "cpu", "duration"],
+                        "fields": ["pid", "name", "duration", "process_name"],
                         "filter": ["timestamp"],
-                        "types": ["INTEGER", "TEXT", "INTEGER", "TIMESTAMP"],
-                        "hierarchy": "pid->name->cpu",
+                        "types": ["INTEGER", "TEXT", "TIMESTAMP", "TEXT"],
+                        "hierarchy": "pid->name",
                         "exit_action": [
                             {
                                 "operation": "difference",
@@ -25,6 +25,12 @@
                                 "field": "timestamp",
                                 "store_name": "timestamp",
                                 "type": "timestamp"
+                            },
+                            {
+                                "operation": "store",
+                                "field": "process_name",
+                                "store_name": "process_name",
+                                "type": "text"
                             }
                         ]
                     },
@@ -63,6 +69,8 @@
                     {
                         "name": "process names",
                         "desc": "Map process names and PIDs",
+                        "query": "SELECT DISTINCT pid,process_name from process WHERE process_name != \"<...>\"",
+                        "disclaimer": "Incomplete trace: Not all process names may be mapped to pids"
                     },
                     {
                         "name": "cpuidle",
