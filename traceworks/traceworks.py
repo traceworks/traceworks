@@ -11,7 +11,7 @@ import logging
 
 from utils import parseline, display_results, flattenMap
 
-bug_address="santosiv@in.ibm.com"
+bug_address="drajarshi@in.ibm.com,santosiv@in.ibm.com"
 
 trace_state_file = '/tmp/trace_state' # Internal use only
 
@@ -82,18 +82,18 @@ class TraceUtil:
             try:
                 self.config = json.load(json_file)
             except ValueError:
-                print "Invalid JSON file"
+                print("Invalid JSON file")
                 exit(1)
 
         if 'traceworks' not in self.config:
-            print "JSON file does not contain traceworks."
+            print("JSON file does not contain traceworks.")
             exit(1)
 
         c = self.config['traceworks']
         if self.args.type not in c:
-            print "Invalid config type. Available types in the config file are:"
+            print("Invalid config type. Available types in the config file are:")
             for i in c:
-                print "   ", i
+                print("   ", i)
 
             exit(0)
 
@@ -111,11 +111,6 @@ class TraceUtil:
         self.tracefile = self.args.tracefile
         self.data = {}
 
-        return
-
-    def debug(self, *message):
-        if self.args.debug:
-            print message
         return
 
     def initdb(self):
@@ -178,6 +173,35 @@ class TraceUtil:
                 t.append(s)
                 i=i+1
                 if i > len(store_vars) - 1:
+                    # For each entry in 't', the common ('matching') subkeys
+                    # are exactly the ones listed as part of the hierarchy.
+                    subkey_count = len(cfg['hierarchy'].split("->"));
+                    subkeys = []
+                    l=0
+                    (k,v)= t[0]
+                    for sk in k:
+                        subkeys.append(sk)
+                        l=l+1
+                        if l==subkey_count: # Pick only the subkeys to match
+                                break
+
+                    match = True
+                    l=0
+                    # Each entry in 't' must have matching subkeys before we
+                    # can proceed.
+                    for j in range(1,len(store_vars)):
+                        (k,v) = t[j]
+                        # Match the first 'subkey_count' subkeys from the key
+                        for sk,l in zip(k,range(0,subkey_count)):
+                                if (sk != subkeys[l]):
+                                        match = False
+                                        break
+
+                    if match == False:
+                        i = 0
+                        t = []
+                        continue
+
                     i = 0
                     z = []
                     t1 = {}
@@ -228,7 +252,7 @@ class TraceUtil:
             d = d[parsed[l[i]]]
 
         if type(parsed['name']) is not str:
-            print l, d, parsed
+            print(l, d, parsed)
         return d
 
     def match_store(self, cfg, parsed):
@@ -299,7 +323,7 @@ class TraceUtil:
 
     def process_trace(self):
         if not self.args.tracefile:
-            print "Cannot generate data without a tracefile"
+            print("Cannot generate data without a tracefile")
             exit(1)
 
         with open(self.args.tracefile, "r") as f:
@@ -336,12 +360,12 @@ class TraceUtil:
     def list_queries(self):
         i = 1
         for q in self.queries:
-            print "{}. {} ({})".format(i, q['name'], q['desc'])
+            print("{}. {} ({})".format(i, q['name'], q['desc']))
             if 'args' in q and len(q['args']) > 0:
-                print "    Requires the following {} argument(s)".format(len(q['args']))
+                print("    Requires the following {} argument(s)".format(len(q['args'])))
                 j = 1
                 for a in q['args']:
-                    print "      {}. {}".format(j, a)
+                    print("      {}. {}".format(j, a))
             i += 1
         exit(0)
 
@@ -370,12 +394,12 @@ class TraceUtil:
 
         for q in self.args.query:
             if q <= 0 or q > len(self.queries):
-                print "Invalid query number {}".format(q)
+                print("Invalid query number {}".format(q))
                 continue
 
             query = self.queries[q - 1]
             if 'query' not in query:
-                print "Query not implemented"
+                print("Query not implemented")
                 continue
 
             # print disclaimer if trace is incomplete
@@ -385,8 +409,8 @@ class TraceUtil:
 
             if "args" in query and len(query['args']) > 0:
                 if not self.args.qargs:
-                    print "query '{}' requires {} argument(s)".format(query["name"],
-                                    len(query["args"]))
+                    print("query '{}' requires {} argument(s)".format(
+                        query["name"], len(query["args"])))
                     exit(1)
                 qstr = query['query'].format(*self.args.qargs)
             else:
@@ -401,7 +425,7 @@ class TraceUtil:
                 db_tables.append(t[0])
 
             if not set(db_tables).intersection(set(tables)):
-                print 'Please generate the database from ftrace before querying'
+                print('Please generate the database from ftrace before querying')
                 exit(1)
 
             self.cursor.execute(qstr)
@@ -414,7 +438,7 @@ class TraceUtil:
     def start(self):
         if self.args.list or self.args.query:
             if not self.queries or len(self.queries) == 0:
-                print "No queries defined"
+                print("No queries defined")
                 exit(1)
 
         if self.args.list:
@@ -424,7 +448,7 @@ class TraceUtil:
 
         if self.args.generate:
             if not self.config or len(self.config) == 0:
-                print "No config defined"
+                print("No config defined")
                 exit(1)
 
             self.create_tables()

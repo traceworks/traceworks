@@ -9,17 +9,25 @@ def display_results(col_names, table):
     data = []
     data.append(col_names)
     data.extend([list(x) for x in table])
-    print tabulate(data, headers='firstrow')
+    print('\nThe unit of time is microseconds')
+    print('================================')
+    print(tabulate(data, headers='firstrow'))
 
 def parseline(line, return_type="list"):
-    m = re.search(r'[ ]*(.*?)-(\d*?)\s*?\[(\d*)\]\s*(.*?)\s\s*(\d*.\d*):\s?(.*)', line)
+    try:
+        # Expect the timestamp to be x(1+).yyyyyy. One or more digits before the decimal
+        # and 6 after (Assuming the timestamp will never be less than 1 second!).
+        m = re.search(r'[ ]*(.*?)-(\d*?)\s*?\[(\d*)\]\s?(.*?)(\d{1,}.\d{6}):\s?(.*)', line)
+    except Exception as e: print(e)
+
     if m is not None:
         logging.debug(m.groups())
         l = re.split('\W', m.group(6))
         g = m.group
         if return_type == "dict":
             d = {}
-            d['comm'] = g(1)
+            # 'process name' is the same as 'comm'
+            d['process_name'] = g(1)
             d['pid'] = int(g(2))
             d['cpu'] = int(g(3))
             d['flags'] = g(4)
