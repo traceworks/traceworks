@@ -62,34 +62,37 @@
                 "queries": [
                     {
                         "name": "process names",
-                        "desc": "Map process names and PIDs"
+                        "desc": "Map process names and PIDs",
                     },
                     {
                         "name": "cpuidle",
                         "desc": "List idle times of each CPU",
-                        "query": "SELECT * from cpu"
+                        "query": "SELECT * from cpu",
+                        "disclaimer": "Incomplete trace: Idle times reported for each CPU may be inaccurate"
                     },
                     {
                         "name": "syscall duration for a pid",
                         "args": ["pid"],
                         "desc": "List time taken by each syscall for a process",
-                        "query": "SELECT pid, name, SUM(duration) FROM process WHERE pid={} GROUP BY name ORDER BY duration DESC"
+                        "query": "SELECT pid, name, SUM(duration) FROM process WHERE pid={} GROUP BY name ORDER BY duration DESC",
+                        "disclaimer": "Incomplete trace: All syscall durations for the specified pid may not be reported"
                     },
                     {
                         "name": "syscall duration",
                         "desc": "List time taken by each syscall",
-                        "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name,cpu) group by name, pid order by duration DESC;"
+                        "query": "select pid, name, sum(duration) from (select name, pid, sum(duration) duration from process group by pid,name) group by name, pid order by pid;",
+                        "disclaimer": "Incomplete trace: All syscall durations may not be reported"
                     },
                     {
                         "name": "syscall duration by cpu",
-                        "desc": "List the time taken by each system call on each CPU",
-                        "query": "SELECT cpu, name, sum(duration) from process group by name"
+                        "desc": "List the time taken by each system call on each CPU"
                     },
                     {
                         "name": "Top n syscalls",
                         "desc": "List the top n syscalls that consume cpu time",
                         "args": ["number"],
-                        "query": "SELECT name, pid, SUM(duration) FROM process GROUP BY pid, name ORDER BY duration DESC LIMIT {}"
+                        "query": "SELECT name, SUM(duration) FROM process GROUP BY name ORDER BY SUM(duration) DESC LIMIT {}",
+                        "disclaimer": "Incomplete trace: The duration of the top syscalls may be inaccurate"
                     }
                 ]
             }

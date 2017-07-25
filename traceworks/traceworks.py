@@ -378,6 +378,11 @@ class TraceUtil:
                 print "Query not implemented"
                 continue
 
+            # print disclaimer if trace is incomplete
+            if (trace_mismatch_entry or trace_mismatch_exit):
+                if ("disclaimer" in query):
+                  print(query["disclaimer"])
+
             if "args" in query and len(query['args']) > 0:
                 if not self.args.qargs:
                     print "query '{}' requires {} argument(s)".format(query["name"],
