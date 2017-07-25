@@ -131,3 +131,18 @@ $ traceworks -q 2
     2      3763700                1215
     3      4295133                 938
 ```
+
+## Contributing
+
+Anybody is welcome to contribute to the project. Some general rules to
+contribution are:
+
+- Follow the standard
+  indentation
+  [practices](https://www.python.org/dev/peps/pep-0008/#code-lay-out)
+- Use spaces than tabs in the code.
+- Test changes using both python version 2 and 3.
+- Do not do too much in one commit, split into small, logical and self-contained
+  patches.
+- Follow the general git
+  commit [standards](https://chris.beams.io/posts/git-commit/)
