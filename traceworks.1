@@ -1,4 +1,4 @@
-.TH TRACEWORKS "1" "March 2016" "traceworks 1.0" "User Commands"
+.TH TRACEWORKS "1" "July 2017" "traceworks 2.0alpha" "User Commands"
 .SH NAME
 traceworks \- parse and analyse data from Linux ftrace.
 .SH SYNOPSIS
@@ -8,9 +8,10 @@ traceworks \- parse and analyse data from Linux ftrace.
 Work with Linux ftrace. This tool helps to parse the traces from the Linux
 kernel, and help to analyse using custom queries.
 .TP
-usage: traceworks [\-h] [\-\-query QUERY [QUERY ...]]
-[\-\-qargs QARGS [QARGS ...]] [\-\-list] [\-\-generate]
-[\-\-debug] [\-\-config CONFIG] [\-\-version]
+usage: traceworks [\-h] [\-\-type TYPE]
+[\-\-query QUERY [QUERY ...]] [\-\-qargs QARGS [QARGS ...]]
+[\-\-list] [\-\-generate] [\-\-debug] [\-\-verbose]
+[\-\-logfile LOGFILE] [\-\-config CONFIG] [\-\-version]
 [tracefile] [dbfile]
 
 .SS "positional arguments:"
@@ -24,6 +25,9 @@ sqlite3 database file (default: tracedump.db)
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 show this help message and exit
+.TP
+\fB\-\-type\fR TYPE, \fB\-t\fR TYPE
+Top level type from the config file (default: ftrace)
 .TP
 \fB\-\-query\fR QUERY [QUERY ...], \fB\-q\fR QUERY [QUERY ...]
 the query number to run (default: None)
@@ -40,13 +44,19 @@ Store data in database from tracefile (default: False)
 \fB\-\-debug\fR, \fB\-d\fR
 Print debug information (default: False)
 .TP
+\fB\-\-verbose\fR, \fB\-v\fR
+Increase output verbosity (default: False)
+.TP
+\fB\-\-logfile\fR, \fB\-f\fR
+Save all logging and debug information to this file (default: None)
+.TP
 \fB\-\-config\fR CONFIG, \fB\-c\fR CONFIG
 JSON config file (default: traceconfig.json)
 .TP
 \fB\-\-version\fR
 show program's version number and exit
 .PP
-Report bugs to <santosiv@in.ibm.com>
+Report bugs to <drajarshi@in.ibm.com,santosiv@in.ibm.com>
 .SH "SEE ALSO"
 The full documentation for
 .B traceworks

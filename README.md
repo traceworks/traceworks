@@ -22,7 +22,7 @@ using custom queries.
 A partial list
 
 - Process runtimes
-- System call time by CPU or Process
+- System call time by Process
 - Process CPU migration history
 - Locks
 - Interrupts
@@ -54,7 +54,7 @@ $ sudo python setup.py install
 ```sh
 $ traceworks [OPTION]... [dbfile] [tracefile]
 
-$ traceworks [-h] [--query QUERY [QUERY ...]] [--qargs QARGS [QARGS ...]] [--list] [--generate] [--debug] [--config CONFIG] [--version] [tracefile] [dbfile]
+$ traceworks [-h] [--type TYPE] [--query QUERY [QUERY ...]] [--qargs QARGS [QARGS ...]] [--list] [--generate] [--debug] [--verbose] [--logfile LOGFILE] [--config CONFIG] [--version] [tracefile] [dbfile]
 ```
 
 ### Arguments
@@ -67,6 +67,10 @@ $ traceworks [-h] [--query QUERY [QUERY ...]] [--qargs QARGS [QARGS ...]] [--lis
 **−h**, **−−help**
 
 show this help message and exit
+
+**−t**, **−−type**
+
+Top level type from the config file (default: ftrace)
 
 **−−query** QUERY \[QUERY ...\], **−q** QUERY \[QUERY ...\]
 
@@ -87,6 +91,14 @@ Store data in database from tracefile (default: False)
 **−−debug**, **−d**
 
 Print debug information (default: False)
+
+**−−verbose**, **−v**
+
+Increase output verbosity (default: False)
+
+**−−logfile** LOGFILE, **−f** LOGFILE
+
+Save all logging and debug information to this file (default: None)
 
 **−−config** CONFIG, **−c** CONFIG
 
@@ -121,9 +133,11 @@ $ traceworks -l
 
 ### Querying
 
-Query contect switches
+Query context switches
 ```sh
 $ traceworks -q 2
+The unit of time is microseconds
+================================
   cpu    idle_time    context_switches
 -----  -----------  ------------------
     0      3060257                 587
