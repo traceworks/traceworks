@@ -58,10 +58,6 @@ class TraceUtil:
         log_level = logging.WARNING
         self.args = parser.parse_args()
 
-        if len(sys.argv) == 1:
-            parser.print_usage()
-            sys.exit(1)
-
         if self.args.debug:
             log_level = logging.DEBUG
 
@@ -74,9 +70,17 @@ class TraceUtil:
         else:
             logfile = None
 
-        logging.basicConfig(stream=sys.stderr, level=log_level,
+        # Changes to match python3 logging format
+        logformat = '%(asctime)s %(levelname)s: %(message)s'
+
+        logging.basicConfig(level=log_level,
                             filename=logfile,
-                            format='%(asctime)s %(levelname)s: %(message)s')
+                            format=logformat)
+      
+        sh = logging.StreamHandler(sys.stderr)
+        sh.setLevel(log_level)
+        sh.setFormatter(logging.Formatter(logformat))
+        logging.getLogger('').addHandler(sh)
 
         with open(self.args.config) as json_file:
             try:
@@ -275,7 +279,7 @@ class TraceUtil:
 		    # (2 consecutive exits) are ignored.
                     if cfg['entry_pattern'] in parsed['buf']:
                         if 'entry_action' in cfg:
-			    if 'last_action' not in d or d['last_action'] is 'exit':
+                            if 'last_action' not in d or d['last_action'] is 'exit':
                                 self.execute_action(parsed, d, cfg['entry_action'])
                                 d['last_action'] = 'entry'
                             else:
@@ -286,7 +290,7 @@ class TraceUtil:
                                         trace_mismatch_entry = True
                     else:
                         if 'exit_action' in cfg:
-			    if 'last_action' in d and d['last_action'] is 'entry':
+                            if 'last_action' in d and d['last_action'] is 'entry':
                                 self.execute_action(parsed, d, cfg['exit_action'])
                                 d['last_action'] = 'exit'
                             else:
