@@ -16,7 +16,7 @@ setup(name='traceworks',
       author_email='drajarshi@in.ibm.com',
       maintainer='Santosh Sivaraj',
       maintainer_email='santosiv@in.ibm.com',
-      license='IPL',
+      license='GPL',
       packages=['traceworks'],
       install_requires=[
           'tabulate', 'argparse'
