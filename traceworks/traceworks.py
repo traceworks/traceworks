@@ -1,23 +1,4 @@
-#!/usr/bin/python
-
-# Parse and analyse data from Linux ftrace
-#
-# Copyright (C) 2015 IBM India Pvt. Ltd.
-#
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
-#  02110-1301, USA
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import json
 import sys
@@ -299,7 +280,7 @@ class TraceUtil:
 		    # (2 consecutive exits) are ignored.
                     if cfg['entry_pattern'] in parsed['buf']:
                         if 'entry_action' in cfg:
-                            if 'last_action' not in d or d['last_action'] is 'exit':
+                            if 'last_action' not in d or d['last_action'] == 'exit':
                                 self.execute_action(parsed, d, cfg['entry_action'])
                                 d['last_action'] = 'entry'
                             else:
@@ -310,7 +291,7 @@ class TraceUtil:
                                         trace_mismatch_entry = True
                     else:
                         if 'exit_action' in cfg:
-                            if 'last_action' in d and d['last_action'] is 'entry':
+                            if 'last_action' in d and d['last_action'] == 'entry':
                                 self.execute_action(parsed, d, cfg['exit_action'])
                                 d['last_action'] = 'exit'
                             else:
@@ -324,7 +305,7 @@ class TraceUtil:
                 if 'exit_pattern' in cfg:
                     if cfg['exit_pattern'] in parsed['buf']:
                         if "exit_action" in cfg:
-                            if 'last_action_s' in d and d['last_action_s'] is 'entry':
+                            if 'last_action_s' in d and d['last_action_s'] == 'entry':
                                 self.execute_action(parsed, d, cfg['exit_action'])
                                 d['last_action_s'] = 'exit'
                             else:
@@ -335,7 +316,7 @@ class TraceUtil:
                                         trace_mismatch_exit = True
                     else:
                         if "entry_action" in cfg:
-                            if 'last_action_s' not in d or d['last_action_s'] is 'exit':
+                            if 'last_action_s' not in d or d['last_action_s'] == 'exit':
                                 self.execute_action(parsed, d, cfg['entry_action'])
                                 d['last_action_s'] = 'entry'
                             else:
